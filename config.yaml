@@ -1,0 +1,65 @@
+# ntfy topic: pick something unguessable — anyone who knows it can read your alerts.
+ntfy_topic: "CHANGE-ME-set-via-NTFY_TOPIC-secret"
+poll_seconds: 300          # 5 min; don't go much lower or you'll get rate-limited/blocked
+claude_model: "claude-haiku-5-5"
+candidate_profile: |
+  Student graduating in 2027 or 2028 (B.Tech/BS or MS). Looking for internships in
+  software engineering (SDE/SWE) or ML engineering / applied science / AI research.
+  ONLY roles located in India (reject roles outside India, including remote-from-abroad).
+
+# Cheap keyword gate before Claude is called.
+title_must_match: '(?i)\b(intern|internship|co-?op|summer|student)\b'
+title_domain_match: '(?i)(software|sde|swe|engineer|developer|machine learning|\bml\b|\bai\b|applied scien|research|data scien|deep learning|computer vision|nlp|llm)'
+
+# No-Claude mode: titles matching this are dropped (PhD-only, non-engineering, hardware).
+title_exclude: '(?i)(\bph\.?d\b|doctoral|post-?doc|sales|marketing|recruit|\bhr\b|human resources|finance|account|legal|design(er)?\b|business|operations|supply chain|hardware|asic|vlsi|analog|rf\b|mechanical|civil)'
+
+# Location gate: job location must match this (Indian cities / "India").
+location_match: '(?i)(india|bengaluru|bangalore|hyderabad|pune|mumbai|chennai|gurgaon|gurugram|noida|delhi|kolkata|ahmedabad|\bIND\b)'
+
+# type: greenhouse | lever | ashby | workday | amazon | oracle | apple | linkedin
+# Run `python watcher.py --check` to see which sources return jobs; fix slugs that return 0/error.
+sources:
+  - {company: Stripe,      type: greenhouse, slug: stripe}
+  - {company: Databricks,  type: greenhouse, slug: databricks}
+  - {company: Snowflake,   type: ashby,      slug: snowflake}
+  - {company: Rippling,    type: ashby,      slug: rippling}
+  - {company: Atlassian,   type: lever,      slug: atlassian}
+  - {company: Amazon,      type: amazon}
+  # Unlisted Amazon postings: walks job IDs (forward = brand-new, backward = slow sweep of older IDs).
+  - {company: Amazon (unlisted), type: amazon_idscan}
+  - {company: Apple,       type: apple}
+  - {company: Oracle,      type: oracle, host: eeho.fa.us2.oraclecloud.com, site: CX_45001}
+  - {company: Adobe,       type: workday, host: adobe.wd5.myworkdayjobs.com,      tenant: adobe,      site: external_experienced}
+  - {company: Salesforce,  type: workday, host: salesforce.wd12.myworkdayjobs.com, tenant: salesforce, site: External_Career_Site}
+  - {company: NVIDIA,      type: workday, host: nvidia.wd5.myworkdayjobs.com,     tenant: nvidia,     site: NVIDIAExternalCareerSite}
+  - {company: Walmart,     type: workday, host: walmart.wd5.myworkdayjobs.com,    tenant: walmart,    site: WalmartExternal}
+  - {company: Intuit,      type: workday, host: intuit.wd1.myworkdayjobs.com,     tenant: intuit,     site: Intuit_Careers}
+  # Companies with no clean public API: fall back to LinkedIn's guest job search
+  # (posted in the last poll window). Slower/lossier than first-party, but works.
+  - {company: Google,      type: linkedin}
+  - {company: Microsoft,   type: linkedin}
+  - {company: Meta,        type: linkedin}
+  - {company: Uber,        type: linkedin}
+  - {company: LinkedIn,    type: linkedin}
+  - {company: Qualcomm,    type: linkedin}
+  - {company: Sprinklr,    type: linkedin}
+  - {company: D. E. Shaw,  type: linkedin}
+  # Extras you may want:
+  - {company: Airbnb,      type: greenhouse, slug: airbnb}
+  - {company: Coinbase,    type: greenhouse, slug: coinbase}
+  - {company: Figma,       type: greenhouse, slug: figma}
+  - {company: Cloudflare,  type: greenhouse, slug: cloudflare}
+  - {company: Palantir,    type: lever,      slug: palantir}
+  - {company: OpenAI,      type: ashby,      slug: openai}
+  - {company: Anthropic,   type: greenhouse, slug: anthropic}
+  - {company: Goldman Sachs, type: linkedin}
+  - {company: Tower Research Capital, type: linkedin}
+  - {company: Cisco,       type: linkedin}
+  - {company: ServiceNow,  type: linkedin}
+  - {company: PhonePe,     type: linkedin}
+  - {company: Flipkart,    type: linkedin}
+
+  # Public Telegram channels where referral / unlisted links get shared.
+  # Use the name from t.me/<name>; must be a PUBLIC channel. Add your own:
+  # - {company: "TG: somechannel", type: telegram, channel: somechannel}

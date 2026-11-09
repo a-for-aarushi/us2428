@@ -1,0 +1,28 @@
+name: watch
+on:
+  schedule: [{cron: "*/10 * * * *"}]   # GitHub often runs this late (10-30 min)
+  workflow_dispatch:
+concurrency: {group: watch, cancel-in-progress: false}
+permissions: {contents: write}
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore state
+        run: git fetch origin state && git show origin/state:seen.db > seen.db || echo "no state yet"
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install requests pyyaml
+      - run: python watcher.py --once
+        env: {NTFY_TOPIC: "${{ secrets.NTFY_TOPIC }}"}
+      - name: Save state
+        if: always()
+        run: |
+          [ -f seen.db ] || exit 0
+          cp seen.db /tmp/seen.db
+          git config user.name watcher && git config user.email watcher@users.noreply.github.com
+          git checkout --orphan state-tmp && git rm -rfq . && cp /tmp/seen.db seen.db
+          git add seen.db && git commit -qm "state $(date -u +%FT%TZ)"
+          git push -f origin HEAD:state
