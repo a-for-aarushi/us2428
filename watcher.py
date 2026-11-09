@@ -46,7 +46,7 @@ def workday(s):
             posts = r.get("jobPostings", [])
             if not posts: break
             for j in posts:
-                if j["externalPath"] in seen: continue
+                if "externalPath" not in j or j["externalPath"] in seen: continue
                 seen.add(j["externalPath"])
                 out.append(dict(id=j["externalPath"], title=j["title"], location=j.get("locationsText", ""),
                                 url=f"https://{s['host']}/en-US/{s['site']}{j['externalPath']}", text="", posted=j.get("postedOn", ""),
