@@ -73,12 +73,97 @@ def amazon(s):
     return out
 
 def apple(s):
-    r = S.post("https://jobs.apple.com/api/role/search", json={"query": "intern India", "filters": {}, "page": 1,
-               "locale": "en-us", "sort": "newest"}, timeout=T).json()
-    return [dict(id=j["positionId"], title=j["postingTitle"],
-                 location=", ".join(l.get("name", "") for l in j.get("locations", [])),
-                 url=f"https://jobs.apple.com/en-us/details/{j['positionId']}", posted=j.get("postingDate", ""),
-                 text=j.get("jobSummary", "")) for j in r.get("searchResults", [])]
+    out = []
+    for page in (1, 2, 3):
+        h = S.get("https://jobs.apple.com/en-in/search", params={"search": "intern", "location": "india-INDC",
+                  "sort": "newest", "page": page}, timeout=T).text
+        m = re.search(r'window.__staticRouterHydrationData = JSON.parse\((".*?")\);', h, re.S)
+        res = json.loads(json.loads(m.group(1)))["loaderData"]["search"].get("searchResults") or []
+        for j in res:
+            out.append(dict(id=j["positionId"], title=j["postingTitle"],
+                            location=", ".join(l.get("name", "") for l in j.get("locations", [])),
+                            url=f"https://jobs.apple.com/en-in/details/{j['positionId']}",
+                            posted=j.get("postingDate", ""), text=j.get("jobSummary", "")))
+        if len(res) < 20: break
+    return out
+
+def atlassian(s):
+    r = S.get("https://www.atlassian.com/endpoint/careers/listings", timeout=T).json()
+    return [dict(id=j["id"], title=j["title"], location="; ".join(j.get("locations", [])),
+                 url=(j.get("portalJobPost") or {}).get("portalUrl", "https://www.atlassian.com/company/careers"),
+                 posted=(j.get("portalJobPost") or {}).get("updatedDate", "")[:10],
+                 text=re.sub("<[^>]+>", " ", (j.get("overview") or "") + (j.get("responsibilities") or ""))) for j in r]
+
+def rippling_ats(s):
+    out, page, pages = [], 0, 1
+    while page < pages and page < 30:
+        r = S.get(f"https://ats.rippling.com/api/v2/board/{s['slug']}/jobs", params={"page": page, "pageSize": 100}, timeout=T).json()
+        pages = r.get("totalPages", 0)
+        out += [dict(id=j["id"], title=j["name"], url=j["url"], text="",
+                     location="; ".join(f"{l.get('name','')} {l.get('country','')}" for l in j.get("locations", [])))
+                for j in r["items"]]
+        page += 1
+    return out
+
+def intuit(s):
+    out = []
+    for p in (1, 2, 3):
+        r = S.get("https://jobs.intuit.com/search-jobs/results", headers={"X-Requested-With": "XMLHttpRequest"},
+                  params={"ActiveFacetID": 0, "CurrentPage": p, "RecordsPerPage": 50, "Distance": 50, "RadiusUnitType": 0,
+                          "Keywords": "intern", "Location": "", "ShowRadius": "False", "IsPagination": "False",
+                          "FacetType": 0, "SearchResultsModuleName": "Search Results",
+                          "SearchFiltersModuleName": "Search Filters", "SortCriteria": 0, "SortDirection": 0, "SearchType": 5}, timeout=T).json()
+        h = r.get("results", "")
+        items = re.findall(r'<a[^>]+href="(/job/[^"]+)"[^>]*>(.*?)</a>', h, re.S)
+        for href, inner in items:
+            title = re.search(r"<h2>(.*?)</h2>", inner, re.S)
+            loc = re.search(r'job-location[^>]*>(.*?)<', inner, re.S)
+            out.append(dict(id=href, title=html.unescape(title.group(1)) if title else href.split("/")[3].replace("-", " "),
+                            location=html.unescape(loc.group(1)).strip() if loc else href.split("/")[2],
+                            url="https://jobs.intuit.com" + href, text=""))
+        if len(items) < 50: break
+    return out
+
+def google(s):
+    out = []
+    for page in (1, 2, 3):
+        h = S.get("https://www.google.com/about/careers/applications/jobs/results/",
+                  params={"q": "intern", "location": "India", "target_level": "INTERN_AND_APPRENTICE", "page": page}, timeout=T).text
+        ids = list(dict.fromkeys(re.findall(r'href="jobs/results/(\d+-[a-z0-9-]+)', h)))
+        for slug in ids:
+            jid, name = slug.split("-", 1)
+            out.append(dict(id=jid, title=name.replace("-", " ").title(), location="India",
+                            url=f"https://www.google.com/about/careers/applications/jobs/results/{slug}", text=""))
+        if len(ids) < 20: break
+    return out
+
+def eightfold(s):
+    """Microsoft, Qualcomm etc. (Eightfold 'pcsx' API; needs a session cookie from the careers page)."""
+    host = s["host"]
+    S.get(f"https://{host}/careers?query=intern&location=India", timeout=T)
+    out, start = [], 0
+    while start < 500:
+        r = S.get(f"https://{host}/api/pcsx/search", headers={"Accept": "application/json"},
+                  params={"domain": s["domain"], "query": "intern", "location": "India", "start": start,
+                          "sort_by": "timestamp"}, timeout=T).json()
+        pos = (r.get("data") or {}).get("positions") or []
+        for j in pos:
+            out.append(dict(id=j["id"], title=j["name"], location="; ".join(j.get("locations", [])),
+                            url=f"https://{host}/careers/job/{j['id']}",
+                            posted=time.strftime("%Y-%m-%d", time.gmtime(j["postedTs"])) if j.get("postedTs") else "",
+                            text=j.get("department", "")))
+        if len(pos) < 10: break
+        start += len(pos)
+    return out
+
+def deshaw(s):
+    h = S.get("https://www.deshawindia.com/careers", timeout=T).text
+    out = []
+    for slug in dict.fromkeys(re.findall(r'href="/careers/([a-z0-9-]+-\d{3,6})"', h)):
+        if slug.startswith("all-positions"): continue
+        out.append(dict(id=slug, title=slug.rsplit("-", 1)[0].replace("-", " ").title(), location="India",
+                        url=f"https://www.deshawindia.com/careers/{slug}", text=""))
+    return out
 
 def oracle(s):
     u = (f"https://{s['host']}/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
@@ -174,7 +259,7 @@ def telegram(s):
     return out
 
 ADAPTERS = dict(greenhouse=greenhouse, lever=lever, ashby=ashby, workday=workday,
-                amazon=amazon, amazon_idscan=amazon_idscan, telegram=telegram, apple=apple, oracle=oracle, linkedin=linkedin)
+                amazon=amazon, atlassian=atlassian, rippling_ats=rippling_ats, intuit=intuit, google=google, eightfold=eightfold, deshaw=deshaw, amazon_idscan=amazon_idscan, telegram=telegram, apple=apple, oracle=oracle, linkedin=linkedin)
 
 # ---------- filtering / verification / notify ----------
 

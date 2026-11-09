@@ -23,8 +23,8 @@ sources:
   - {company: Stripe,      type: greenhouse, slug: stripe}
   - {company: Databricks,  type: greenhouse, slug: databricks}
   - {company: Snowflake,   type: ashby,      slug: snowflake}
-  - {company: Rippling,    type: ashby,      slug: rippling}
-  - {company: Atlassian,   type: lever,      slug: atlassian}
+  - {company: Rippling,    type: rippling_ats, slug: rippling}
+  - {company: Atlassian,   type: atlassian}
   - {company: Amazon,      type: amazon}
   # Unlisted Amazon postings: walks job IDs (forward = brand-new, backward = slow sweep of older IDs).
   - {company: Amazon (unlisted), type: amazon_idscan}
@@ -33,18 +33,18 @@ sources:
   - {company: Adobe,       type: workday, host: adobe.wd5.myworkdayjobs.com,      tenant: adobe,      site: external_experienced}
   - {company: Salesforce,  type: workday, host: salesforce.wd12.myworkdayjobs.com, tenant: salesforce, site: External_Career_Site}
   - {company: NVIDIA,      type: workday, host: nvidia.wd5.myworkdayjobs.com,     tenant: nvidia,     site: NVIDIAExternalCareerSite}
-  - {company: Walmart,     type: workday, host: walmart.wd5.myworkdayjobs.com,    tenant: walmart,    site: WalmartExternal}
-  - {company: Intuit,      type: workday, host: intuit.wd1.myworkdayjobs.com,     tenant: intuit,     site: Intuit_Careers}
+  - {company: Walmart,     type: linkedin}   # Workday API refuses requests
+  - {company: Intuit,      type: intuit}
+  - {company: Sprinklr,    type: workday, host: sprinklr.wd1.myworkdayjobs.com,   tenant: sprinklr,   site: careers}
   # Companies with no clean public API: fall back to LinkedIn's guest job search
   # (posted in the last poll window). Slower/lossier than first-party, but works.
-  - {company: Google,      type: linkedin}
-  - {company: Microsoft,   type: linkedin}
+  - {company: Google,      type: google}
+  - {company: Microsoft,   type: eightfold, host: apply.careers.microsoft.com, domain: microsoft.com}
   - {company: Meta,        type: linkedin}
   - {company: Uber,        type: linkedin}
   - {company: LinkedIn,    type: linkedin}
-  - {company: Qualcomm,    type: linkedin}
-  - {company: Sprinklr,    type: linkedin}
-  - {company: D. E. Shaw,  type: linkedin}
+  - {company: Qualcomm,    type: eightfold, host: careers.qualcomm.com,        domain: qualcomm.com}
+  - {company: D. E. Shaw,  type: deshaw}
   # Extras you may want:
   - {company: Airbnb,      type: greenhouse, slug: airbnb}
   - {company: Coinbase,    type: greenhouse, slug: coinbase}

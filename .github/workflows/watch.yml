@@ -7,7 +7,7 @@ permissions: {contents: write}
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 9
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Restore state
